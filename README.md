@@ -1,5 +1,9 @@
 ### 【一个理论上能正常使用的钉钉打卡脚本】
 
+------
+
+开源地址：https://github.com/fangyk-rel/DingDing-SayNo
+
 ###### 本脚本托管于[Hamibot](https://hamibot.com/)，你可以前往安装使用该脚本；也可以修改后用于Auto.js
 
 #### 安装脚本后你需要干什么？
