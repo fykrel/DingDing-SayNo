@@ -8,10 +8,6 @@ const w = device.width;
 const h = device.height;
 /* --------------------------------------预配置开始----------------------------------- */
 const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, pwd, waitTime, isSendImg } = hamibot.env;
-// if (!serverUrl) {
-//     toastLog("请设置server酱Url");
-//     exitShell();
-// }
 
 if (!morTime) {
     toastLog("请设置上班打卡时间范围");
@@ -45,12 +41,14 @@ startProgram();
  * 脚本流程
  */
 function startProgram() {
+    // 0.解锁
     unlockIfNeed();
     sleep(waitTime * 1000);
     // 1.检查环境
     checkMyPermission();
     // 2.进入页面
     goToPage();
+    // 2.1处理公司选择弹出框
     handleOrgDialog();
     // 3.获取操作并执行
     var randTime = random(10, maxTime);
