@@ -7,7 +7,7 @@ var myStr = "";
 const w = device.width;
 const h = device.height;
 /* --------------------------------------预配置开始----------------------------------- */
-const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, pwd, waitTime, isSendImg } = hamibot.env;
+const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, isSendImg, account, accountPwd } = hamibot.env;
 
 if (!morTime) {
     toastLog("请设置上班打卡时间范围");
@@ -41,14 +41,12 @@ startProgram();
  * 脚本流程
  */
 function startProgram() {
-    // 0.解锁
     unlockIfNeed();
     sleep(waitTime * 1000);
-    // 1.检查环境
+    // 1.检查权限
     checkMyPermission();
     // 2.进入页面
     goToPage();
-    // 2.1处理公司选择弹出框
     handleOrgDialog();
     // 3.获取操作并执行
     var randTime = random(10, maxTime);
@@ -105,6 +103,9 @@ function unlockIfNeed() {
     setLog("解锁完毕");
 }
 
+/**
+ * 输入手机解锁密码
+ */
 function enterPwd() {
     //判断是否已经上滑至输入密码界面
     for (int = 0; i < 10; i++) {
@@ -130,9 +131,38 @@ function enterPwd() {
 }
 
 /**
+ * 是否需要登录
+ */
+function loginIfNeed() {
+    if (text("忘记密码").clickable(true).exists() || desc("忘记密码").clickable(true).exists()) {
+        if (!account || !accountPwd) {
+            setLog("当前未登录，请输入钉钉登录账号及密码");
+            exitShell();
+        }
+
+        if (setText(0, account) && setText(1, accountPwd)) {
+            if (text("忘记密码").clickable(true).exists()) {
+                var loginBtnY = text("忘记密码").clickable(true).findOne().bounds().top - 10;
+            } else {
+                var loginBtnY = desc("忘记密码").clickable(true).findOne().bounds().top - 10;
+            }
+            click(w / 2, loginBtnY);
+            setLog("登录成功");
+        } else {
+            setLog("登录失败");
+            exitShell();
+        }
+
+    } else {
+        setLog("已登录");
+    }
+}
+
+/**
  * 上传截图至SMMS
  */
 function uploadImg() {
+    toastLog("上传打卡截图...");
     const url = "https://sm.ms/api/v2/upload";
     const fileName = "/sdcard/" + new Date().getTime() + ".png";
     captureScreen(fileName);
@@ -154,6 +184,7 @@ function uploadImg() {
         setLog("手机截图删除结果：" + ((files.remove(fileName) ? "成功" : "失败")));
         setLog("图床图片删除链接：");
         setLog(delUrl);
+        setLog("打卡结果截图");
         myLog += '![logo](' + imgUrl + ')';
     } else {
         setLog("图片上传失败~");
@@ -165,25 +196,33 @@ function uploadImg() {
  */
 function getReslt() {
     toastLog("等待10s，确保打卡操作完毕");
-    sleep(1000);
-    if (!tokenUrl && !isSendImg) {
-        if (textContains("打卡成功").exists() || descContains("打卡成功").exists()) {
-            setLog("普通识别结果：" + myStr + "成功!");
-        } else {
-            setLog("普通识别结果：" + myStr + "失败!，扣你丫工资~");
+    sleep(10000);
+    toastLog("识别打卡结果");
+
+    try {
+        if (!tokenUrl && !isSendImg) {
+            if (textContains("打卡成功").exists() || descContains("打卡成功").exists()) {
+                setLog("普通识别结果：" + myStr + "成功!");
+            } else {
+                setLog("普通识别结果：" + myStr + "失败!，扣你丫工资~");
+            }
         }
-    }
-    if (tokenUrl) {
-        let str = getContentByOcr();
-        if (str.indexOf("打卡成功") !== -1) {
-            setLog("OCR识别结果：" + myStr + "成功!");
-        } else {
-            setLog("OCR识别结果：" + myStr + "失败!，扣你丫工资~");
+        if (tokenUrl) {
+            let str = getContentByOcr();
+            if (str.indexOf("打卡成功") !== -1) {
+                setLog("OCR识别结果：" + myStr + "成功!");
+            } else {
+                setLog("OCR识别结果：" + myStr + "失败!，扣你丫工资~");
+            }
         }
+        if (isSendImg) {
+            uploadImg();
+        }
+    } catch (error) {
+        setLog("识别打卡结果出错：" + '\n\n' + error.message);
     }
-    if (isSendImg) {
-        uploadImg();
-    }
+    back();
+    back();
 }
 
 /**
@@ -204,7 +243,7 @@ function getContentByOcr() {
  */
 function punchTheClock() {
     setLog("当前操作：" + myStr);
-    waitShow(textContains("已进入").exists() || descContains("已进入").exists());
+    waitBtnShow();
     if (text(myStr).clickable(true).exists()) {
         text(myStr).clickable(true).findOne().click();
     }
@@ -214,18 +253,30 @@ function punchTheClock() {
 }
 
 /**
- * 等待某个item出现
- * @param {*} item boolean
- * @param {*} delay 最长等待时间，默认60s，一般不传
+ * 等待进入钉钉登录界面或者主界面
  */
-function waitShow(item, delay) {
+function waitStart() {
     let sTime = new Date().getTime();
-    if (!delay) {
-        delay = 60000;
-    }
+    let delay = 30000;
 
     while ((new Date().getTime() - sTime) < delay) {
-        if (item) {
+        if (text("忘记密码").exists() || desc("忘记密码").exists() ||
+            text("工作台").exists() || desc("工作台").exists()) {
+            break;
+        }
+        sleep(1000);
+    }
+}
+
+/**
+ * 等待打卡按钮出现
+ */
+function waitBtnShow() {
+    let sTime = new Date().getTime();
+    let delay = 60000;
+
+    while ((new Date().getTime() - sTime) < delay) {
+        if (textContains("已进入").exists() || descContains("已进入").exists()) {
             break;
         }
         sleep(1000);
@@ -318,15 +369,12 @@ function getOptByTime() {
 
 /**
  * 钉钉可能加入了多个公司，通过意图进入打卡页面会提示选择
- * 默认等待60s
  */
-function handleOrgDialog(delay) {
-    if (companyName === "") {
+function handleOrgDialog() {
+    if ("" == companyName || null == companyName) {
         return;
     }
-    if (!delay) {
-        delay = 60000;
-    }
+    let delay = 30000;
     const flagStr = "请选择你要进入的考勤组织";
     let sTime = new Date().getTime();
     while ((new Date().getTime() - sTime) < delay) {
@@ -351,9 +399,10 @@ function handleOrgDialog(delay) {
  * 打开打卡页面
  */
 function goToPage() {
-    toast("等待系统准备");
+    toastLog("打开钉钉中...");
     launch("com.alibaba.android.rimet");
-    toast("打开钉钉中...");
+    waitStart();
+    loginIfNeed();
     sleep(waitTime * 1000);
     setLog("进入打卡页面");
     var a = app.intent({
@@ -387,5 +436,5 @@ function checkMyPermission() {
         app.startActivity({ action: "android.settings.ACCESSIBILITY_SETTINGS" });
         exitShell();
     }
-    log("权限检查完毕");
+    toastLog("权限检查完毕");
 }
