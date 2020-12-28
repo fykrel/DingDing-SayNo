@@ -134,25 +134,37 @@ function enterPwd() {
  * 是否需要登录
  */
 function loginIfNeed() {
+    if (text("密码登录").clickable(true).exists()) {
+        text("密码登录").clickable(true).findOne().click();
+    } else if (desc("密码登录").clickable(true).exists()) {
+        desc("密码登录").clickable(true).findOne().click();
+    }
+
     if (text("忘记密码").clickable(true).exists() || desc("忘记密码").clickable(true).exists()) {
         if (!account || !accountPwd) {
             setLog("当前未登录，请输入钉钉登录账号及密码");
             exitShell();
         }
 
-        if (setText(0, account) && setText(1, accountPwd)) {
-            if (text("忘记密码").clickable(true).exists()) {
-                var loginBtnY = text("忘记密码").clickable(true).findOne().bounds().top - 10;
-            } else {
-                var loginBtnY = desc("忘记密码").clickable(true).findOne().bounds().top - 10;
-            }
-            click(w / 2, loginBtnY);
-            setLog("登录成功");
+        if (id("et_phone_input").exists() && id("et_pwd_login").exists()) {
+            id("et_phone_input").findOne().setText(account);
+            sleep(1000);
+            id("et_pwd_login").findOne().setText(accountPwd);
+            log("使用ID选择输入");
         } else {
-            setLog("登录失败");
-            exitShell();
+            setText(0, account);
+            sleep(1000);
+            setText(1, accountPwd);
+            log("使用setText输入");
         }
-
+        //获取登录按钮坐标
+        if (text("忘记密码").clickable(true).exists()) {
+            var loginBtnY = text("忘记密码").clickable(true).findOne().bounds().top - 10;
+        } else {
+            var loginBtnY = desc("忘记密码").clickable(true).findOne().bounds().top - 10;
+        }
+        click(w / 2, loginBtnY);
+        setLog("登录成功");
     } else {
         setLog("已登录");
     }
@@ -261,7 +273,8 @@ function waitStart() {
 
     while ((new Date().getTime() - sTime) < delay) {
         if (text("忘记密码").exists() || desc("忘记密码").exists() ||
-            text("工作台").exists() || desc("工作台").exists()) {
+            text("工作台").exists() || desc("工作台").exists() ||
+            text("密码登录").exists() || desc("密码登录").exists()) {
             break;
         }
         sleep(1000);
@@ -402,6 +415,7 @@ function goToPage() {
     toastLog("打开钉钉中...");
     launch("com.alibaba.android.rimet");
     waitStart();
+    log("启动完成");
     loginIfNeed();
     sleep(waitTime * 1000);
     setLog("进入打卡页面");
