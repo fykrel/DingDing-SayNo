@@ -6,6 +6,8 @@
 
 开源地址：https://github.com/fangyk-rel/DingDing-SayNo
 
+该脚本用于Hamibot，你可以修改后用于Auto.js
+
 #### 安装脚本后你需要干什么？
 
 #### 开启必要权限
