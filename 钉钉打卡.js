@@ -9,6 +9,18 @@ const h = device.height;
 /* --------------------------------------预配置开始----------------------------------- */
 const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, isSendImg, account, accountPwd } = hamibot.env;
 
+// 息屏时间/2
+const loopTime = getLoopTime();
+
+/**
+ * 防止息屏
+ */
+threads.start(function () {
+    setInterval(() => {
+        toast("防止锁屏");
+    }, loopTime);
+});
+
 if (!morTime) {
     toastLog("请设置上班打卡时间范围");
     exitShell();
@@ -51,8 +63,8 @@ function startProgram() {
     // 3.获取操作并执行
     var randTime = random(10, maxTime);
     toast(randTime + "s后开始打卡");
-    sleep(randTime * 1000);
     setLog(randTime + "s后开始打卡");
+    sleep(randTime * 1000);
     punchTheClock();
     // 4.获取结果
     getReslt();
@@ -66,6 +78,17 @@ function startProgram() {
 function isLocked() {
     var km = context.getSystemService(Context.KEYGUARD_SERVICE);
     return km.isKeyguardLocked() && km.isKeyguardSecure();
+}
+
+/**
+ * 根据当前自动息屏时间获取循环时间
+ */
+function getLoopTime() {
+    let lockTime = Settings.System.getInt(context.getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT);
+    if (null == lockTime || "" == lockTime || "undefined" == lockTime) {
+        return 8000;
+    }
+    return lockTime / 2;
 }
 
 /**
@@ -84,14 +107,14 @@ function unlockIfNeed() {
     var x = 0;
     var y = 0;
     for (let i = 0; i < 30; i++) {
-        y = x * tan(angle)
+        y = x * tan(angle);
         if ((y0 - y) < 0) {
             break;
         }
-        var xy = [x0 + x, y0 - y]
-        xyArr.push(xy)
+        var xy = [x0 + x, y0 - y];
+        xyArr.push(xy);
         x += 5;
-        angle += 3
+        angle += 3;
     }
     gesture.apply(null, xyArr);
     function tan(angle) {
