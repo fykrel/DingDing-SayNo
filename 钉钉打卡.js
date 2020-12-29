@@ -1,6 +1,4 @@
-importClass(android.content.pm.PackageManager);
 importClass(android.provider.Settings);
-importClass(android.app.KeyguardManager);
 importClass(android.content.Context);
 var myLog = "";
 var myStr = "";
