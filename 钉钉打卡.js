@@ -1,14 +1,15 @@
 importClass(android.provider.Settings);
 importClass(android.content.Context);
+/* --------------------------------------预配置开始----------------------------------- */
+const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, isSendImg, account, accountPwd } = hamibot.env;
 var myLog = "";
 var myStr = "";
 const w = device.width;
 const h = device.height;
-/* --------------------------------------预配置开始----------------------------------- */
-const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, isSendImg, account, accountPwd } = hamibot.env;
-
+const maxSwipeNum = 50;
 // 息屏时间/2
 const loopTime = getLoopTime();
+var myCfg = storages.create("DingDing-SayNo");
 
 /**
  * 防止息屏
@@ -95,9 +96,45 @@ function getLoopTime() {
 function unlockIfNeed() {
     device.wakeUpIfNeeded();
     if (!isLocked()) {
+        setLog("无需解锁");
         return;
     }
-    sleep(1200)
+    sleep(1000);
+    // 上滑操作
+    swipeUp();
+    if (pwd) {
+        enterPwd();
+    }
+    setLog("解锁完毕");
+}
+
+/**
+ * 上滑至输入密码界面
+ */
+function swipeUp() {
+    if (myCfg.contains("CFG_SWIPE_TIME_")) {
+        const CFG_SWIPE_TIME_ = myCfg.get("CFG_SWIPE_TIME_");
+        gesture(CFG_SWIPE_TIME_, [w / 2, h * 0.9], [w / 2, h * 0.1]);
+        sleep(1000);
+        if (swipeUpSuc()) {
+            return;
+        }
+    }
+
+    if (swipeUpMethodOne()) {
+        log("方式一解锁成功");
+    } else if (swipeUpMethodTwo()) {
+        log("方式二解锁成功");
+    } else {
+        setLog("暂时无法解锁");
+        exitShell();
+    }
+}
+
+/**
+ * 上滑方式一
+ */
+function swipeUpMethodOne() {
     var xyArr = [220];
     var x0 = w / 2;
     var y0 = h / 4 * 3;
@@ -118,23 +155,43 @@ function unlockIfNeed() {
     function tan(angle) {
         return Math.tan(angle * Math.PI / 180);
     }
-    if (pwd) {
-        enterPwd();
+    return swipeUpSuc();
+}
+
+/**
+ * 上滑方式二
+ */
+function swipeUpMethodTwo() {
+    let swipeTime = 0;
+    let addTime = 20;
+    for (let i = 0; i < maxSwipeNum; i++) {
+        swipeTime += addTime;
+        gesture(swipeTime, [w / 2, h * 0.9], [w / 2, h * 0.1]);
+        sleep(1000);
+        if (swipeUpSuc()) {
+            myCfg.put("CFG_SWIPE_TIME_", swipeTime);
+            return true;
+        }
     }
-    setLog("解锁完毕");
+    return false;
+}
+
+/**
+ * 判断上滑结果
+ */
+function swipeUpSuc() {
+    for (let i = 0; i < 10; i++) {
+        if (!text(i).clickable(true).exists() && !desc(i).clickable(true).exists()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
  * 输入手机解锁密码
  */
 function enterPwd() {
-    //判断是否已经上滑至输入密码界面
-    for (int = 0; i < 10; i++) {
-        if (!text(i).clickable(true).exists() && !desc(i).clickable(true).exists()) {
-            setLog("解锁屏幕失败");
-            exitShell();
-        }
-    }
     //点击
     if (text(0).clickable(true).exists()) {
         for (var i = 0; i < pwd.length; i++) {
@@ -233,12 +290,10 @@ function getReslt() {
     toastLog("识别打卡结果");
 
     try {
-        if (!tokenUrl && !isSendImg) {
-            if (textContains("打卡成功").exists() || descContains("打卡成功").exists()) {
-                setLog("普通识别结果：" + myStr + "成功!");
-            } else {
-                setLog("普通识别结果：" + myStr + "失败!，扣你丫工资~");
-            }
+        if (textContains("打卡成功").exists() || descContains("打卡成功").exists()) {
+            setLog("普通识别结果：" + myStr + "成功!");
+        } else {
+            setLog("普通识别结果：" + myStr + "失败!，扣你丫工资~");
         }
         if (tokenUrl) {
             let str = getContentByOcr();
@@ -457,19 +512,35 @@ function checkMyPermission() {
         setLog("当前时间不在设置的考勤范围内!!!");
         exitShell();
     }
-    // 2.请求截图权限
-    if (tokenUrl || isSendImg) {
-        if (!requestScreenCapture()) {
-            setLog("申请截图权限失败");
-            exitShell();
-        }
-    }
-    // 3.检查无障碍权限
+
+    // 2.检查无障碍权限
     if (auto.service == null) {
         setLog("请打开无障碍服务,脚本退出！！！");
         sleep(3000);
         app.startActivity({ action: "android.settings.ACCESSIBILITY_SETTINGS" });
         exitShell();
     }
+
+    // 3.请求截图权限
+    if (tokenUrl || isSendImg) {
+        // 自动点击申请截图权限时的按钮
+        threads.start(function () {
+            let timer = setInterval(function () {
+                if (text("立即开始").clickable(true).exists()) {
+                    text("立即开始").clickable(true).findOne().click();
+                    clearInterval(timer);
+                } else if (desc("立即开始").clickable(true).exists()) {
+                    desc("立即开始").clickable(true).findOne().click();
+                    clearInterval(timer);
+                }
+            }, 500);
+        });
+
+        if (!requestScreenCapture()) {
+            setLog("申请截图权限失败");
+            exitShell();
+        }
+    }
+
     toastLog("权限检查完毕");
 }
