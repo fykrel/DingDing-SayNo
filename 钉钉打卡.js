@@ -1,12 +1,14 @@
 importClass(android.provider.Settings);
 importClass(android.content.Context);
 /* --------------------------------------预配置开始----------------------------------- */
-const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, isSendImg, account, accountPwd } = hamibot.env;
+const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, isSendImg, account, accountPwd, jumpRules } = hamibot.env;
 var myLog = "";
 var myStr = "";
 const w = device.width;
 const h = device.height;
 const maxSwipeNum = 50;
+const holidayUrl = "http://timor.tech/api/holiday/year?week=Y";
+const holidayCfgName = "HOLIDAY_ARRAY_" + new Date().getFullYear() + "_";
 // 息屏时间/2
 const loopTime = getLoopTime();
 var myCfg = storages.create("DingDing-SayNo");
@@ -44,6 +46,11 @@ var goToWorkTime = morTime.split(';');
 
 //下班打卡时间段
 var afterWorkTime = nightTime.split(';');
+
+// 设置当年的节假日
+if ("rule_1" == jumpRules && !myCfg.contains(holidayCfgName)) {
+    setholiday();
+}
 /* --------------------------------------预配置结束----------------------------------- */
 
 startProgram();
@@ -88,6 +95,30 @@ function getLoopTime() {
         return 8000;
     }
     return lockTime / 2;
+}
+
+/**
+ * 获取今年的所有节假日
+ */
+function setholiday() {
+    setLog("获取当年节假日数据");
+    let res = http.get(holidayUrl, {});
+    let jsonObj = JSON.parse(res.body.string());
+    if (jsonObj.code == -1) {
+        setLog("获取节假日数据失败");
+        exitShell();
+    }
+
+    let holiday = jsonObj.holiday;
+    let holidayArray = [];
+    if (holiday) {
+        for (let key in holiday) {
+            if (holiday[key].holiday) {
+                holidayArray.push(holiday[key].date);
+            }
+        }
+        myCfg.put(holidayCfgName, holidayArray);
+    }
 }
 
 /**
@@ -375,7 +406,7 @@ function waitBtnShow() {
 /**
  * 获取当前时间，格式:2019/11/26 15:32:27
  */
-function getDateTime() {
+function getDateTime(e) {
     var date = new Date();
     let year = date.getFullYear();
     let month = date.getMonth() + 1;
@@ -383,7 +414,16 @@ function getDateTime() {
     let hour = date.getHours();
     let minute = date.getMinutes();
     let second = date.getSeconds();
-    return year + '年' + month + '月' + day + '日' + hour + ':' + minute + ':' + second;
+    if (month < 10) {
+        month = "0" + month;
+    }
+    if (day < 10) {
+        day = "0" + month;
+    }
+    if (e) {
+        return year + '年' + month + '月' + day + '日' + hour + ':' + minute + ':' + second;
+    }
+    return year + '-' + month + '-' + day;
 }
 
 /**
@@ -391,7 +431,7 @@ function getDateTime() {
  */
 function exitShell() {
     if (serverUrl) {
-        sendMsg(getDateTime() + " 打卡结果", myLog);
+        sendMsg(getDateTime(true) + " 打卡结果", myLog);
     }
     home();
     exit();
@@ -513,7 +553,22 @@ function checkMyPermission() {
         exitShell();
     }
 
-    // 2.检查无障碍权限
+    // 2.根据配置跳过节假日或周末
+    if ("rule_1" == jumpRules) {
+        let holidayArray = myCfg.get(holidayCfgName);
+        if (holidayArray.indexOf(getDateTime(false)) != -1) {
+            setLog("今天是节假日, 不会打卡哦~");
+            exitShell();
+        }
+    } else if ("rule_2" == jumpRules) {
+        let week = new Date().getDay();
+        if (week == 6 || week == 0) {
+            setLog("今天是周末, 不会打卡哦~");
+            exitShell();
+        }
+    }
+
+    // 3.检查无障碍权限
     if (auto.service == null) {
         setLog("请打开无障碍服务,脚本退出！！！");
         sleep(3000);
@@ -521,7 +576,7 @@ function checkMyPermission() {
         exitShell();
     }
 
-    // 3.请求截图权限
+    // 4.请求截图权限
     if (tokenUrl || isSendImg) {
         // 自动点击申请截图权限时的按钮
         threads.start(function () {
