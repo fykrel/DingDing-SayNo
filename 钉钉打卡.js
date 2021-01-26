@@ -266,13 +266,36 @@ function loginIfNeed() {
             setText(1, accountPwd);
             log("使用setText输入");
         }
-        //获取登录按钮坐标
-        if (text("忘记密码").clickable(true).exists()) {
-            var loginBtnY = text("忘记密码").clickable(true).findOne().bounds().top - 10;
+        // Android版本低于7.0
+        if (device.sdkInt < 24) {
+            let pageUIObj = [];
+            if (id("btn_next").clickable(true).exists()) {
+                id("btn_next").clickable(true).findOne().click();
+            } else {
+                if (text("忘记密码").exists()) {
+                    pageUIObj = text("忘记密码").findOne().parent().parent().children();
+                } else {
+                    pageUIObj = desc("忘记密码").findOne().parent().parent().children();
+                }
+                if (pageUIObj.length == 5) {
+                    let loginBtn = pageUIObj[3].children()[0];
+                    loginBtn.click();
+                } else {
+                    setLog("找不到登录按钮，请联系脚本作者!");
+                }
+            }
+
         } else {
-            var loginBtnY = desc("忘记密码").clickable(true).findOne().bounds().top - 10;
+            //获取登录按钮坐标
+            if (text("忘记密码").clickable(true).exists()) {
+                var loginBtnY = text("忘记密码").clickable(true).findOne().bounds().top - 10;
+            } else {
+                var loginBtnY = desc("忘记密码").clickable(true).findOne().bounds().top - 10;
+            }
+            click(w / 2, loginBtnY);
         }
-        click(w / 2, loginBtnY);
+
+
         setLog("登录成功");
     } else {
         setLog("已登录");
