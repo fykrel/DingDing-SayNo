@@ -1,7 +1,7 @@
 importClass(android.provider.Settings);
 importClass(android.content.Context);
 /* --------------------------------------预配置开始----------------------------------- */
-const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, isSendImg, account, accountPwd, jumpRules } = hamibot.env;
+const { serverUrl,serverChanTurboUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, isSendImg, account, accountPwd, jumpRules } = hamibot.env;
 var myLog = "";
 var myStr = "";
 const w = device.width;
@@ -456,6 +456,9 @@ function exitShell() {
     if (serverUrl) {
         sendMsg(getDateTime(true) + " 打卡结果", myLog);
     }
+    if (serverChanTurboUrl) {
+        sendMsgByServerChanTurbo(getDateTime(true) + " 打卡结果", myLog);
+    }
     home();
     exit();
 }
@@ -467,6 +470,19 @@ function exitShell() {
  */
 function sendMsg(title, msg) {
     let url = "https://sc.ftqq.com/" + serverUrl + ".send";
+    var res = http.post(url, {
+        "text": title,
+        "desp": msg
+    });
+}
+
+/**
+ * 通过server酱turbo推送消息
+ * @param {*} title 标题
+ * @param {*} msg 内容
+ */
+function sendMsgByServerChanTurbo(title, msg) {
+    let url = "https://sctapi.ftqq.com/" + serverChanTurboUrl + ".send";
     var res = http.post(url, {
         "text": title,
         "desp": msg
