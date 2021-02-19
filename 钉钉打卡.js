@@ -1,7 +1,7 @@
 importClass(android.provider.Settings);
 importClass(android.content.Context);
 /* --------------------------------------预配置开始----------------------------------- */
-const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, isSendImg, account, accountPwd, jumpRules } = hamibot.env;
+const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, sendImgRules, account, accountPwd, jumpRules } = hamibot.env;
 var myLog = "";
 var myStr = "";
 const w = device.width;
@@ -48,7 +48,7 @@ var goToWorkTime = morTime.split(';');
 var afterWorkTime = nightTime.split(';');
 
 // 设置当年的节假日
-if ("rule_1" == jumpRules && !myCfg.contains(holidayCfgName)) {
+if (("rule_1" == jumpRules || "rule_3" == jumpRules) && !myCfg.contains(holidayCfgName)) {
     setholiday();
 }
 /* --------------------------------------预配置结束----------------------------------- */
@@ -357,7 +357,7 @@ function getReslt() {
                 setLog("OCR识别结果：" + myStr + "失败!，扣你丫工资~");
             }
         }
-        if (isSendImg) {
+        if (sendImgRules != "notSend") {
             uploadImg();
         }
     } catch (error) {
@@ -453,7 +453,7 @@ function getDateTime(e) {
  * 发送日志并退出脚本
  */
 function exitShell() {
-    if (serverUrl) {
+    if (serverUrl && sendImgRules != "notSend") {
         sendMsg(getDateTime(true) + " 打卡结果", myLog);
     }
     home();
@@ -466,7 +466,7 @@ function exitShell() {
  * @param {*} msg 内容
  */
 function sendMsg(title, msg) {
-    let url = "https://sc.ftqq.com/" + serverUrl + ".send";
+    let url = "https://" + sendImgRules + ".ftqq.com/" + serverUrl + ".send";
     var res = http.post(url, {
         "text": title,
         "desp": msg
@@ -589,6 +589,13 @@ function checkMyPermission() {
             setLog("今天是周末, 不会打卡哦~");
             exitShell();
         }
+    } else if ("rule_3" == jumpRules) {
+        let week = new Date().getDay();
+
+        if (holidayArray.indexOf(getDateTime(false)) != -1 || week == 6 || week == 0) {
+            setLog("今天是节假日, 不会打卡哦~");
+            exitShell();
+        }
     }
 
     // 3.检查无障碍权限
@@ -600,7 +607,7 @@ function checkMyPermission() {
     }
 
     // 4.请求截图权限
-    if (tokenUrl || isSendImg) {
+    if (tokenUrl || sendImgRules != "rule_0") {
         // 自动点击申请截图权限时的按钮
         threads.start(function () {
             let timer = setInterval(function () {
