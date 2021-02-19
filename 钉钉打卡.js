@@ -295,7 +295,6 @@ function loginIfNeed() {
             click(w / 2, loginBtnY);
         }
 
-
         setLog("登录成功");
     } else {
         setLog("已登录");
