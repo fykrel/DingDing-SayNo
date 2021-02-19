@@ -86,14 +86,18 @@ V3.2：
 
   默认3s，打不开钉钉的话，请调大该数字
 
-- **【非必填】【server酱Url】：**  
-
-  http://sc.ftqq.com/?c=wechat&a=bind 前往绑定，绑定后在“发送消息”中的SCKEY复制到此处输入框。用于推送打卡结果到微信
-
 - **【非必填】【百度OCR】：**  
 
   填写百度OCR获取token的url，一般不用管这个
 
-- **【非必选】【上传截图至图床】：**  
+- **【非必填】【server酱Url】：**  
 
-  勾选后，会将打卡截图上传至SM·MS图床，以及图片删除链接发送至server酱，你可以在微信中预览该图片，同时通过删除链接删除该图片（若不使用server酱，请勿勾选）
+  旧版前往http://sc.ftqq.com/?c=wechat&a=bind 绑定，
+
+  Turbo版前往https://sct.ftqq.com/sendkey绑定，注意设置消息通道
+
+  然后将SCKEY复制到此处输入框。用于推送打卡结果到微信
+
+- **【Server酱通知方式】**：**  
+
+  可选不通知、旧版和Turbo版
