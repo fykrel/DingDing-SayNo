@@ -118,6 +118,9 @@ function setholiday() {
             }
         }
         myCfg.put(holidayCfgName, holidayArray);
+    } else {
+        setLog("节假日数据接口变更，请联系开发者，并设置节假日规则为请选择或跳过周末");
+        exitShell();
     }
 }
 
@@ -128,16 +131,21 @@ function unlockIfNeed() {
     device.wakeUpIfNeeded();
     if (!isLocked()) {
         setLog("无需解锁");
+        swipeUp();
         return;
     }
-    sleep(1000);
-    // 上滑操作
     swipeUp();
+    sleep(1000);
     if (pwd) {
         enterPwd();
+    } else {
+        setLog("请配置手机解锁密码");
+        exitShell();
     }
     setLog("解锁完毕");
 }
+
+
 
 /**
  * 上滑至输入密码界面
@@ -153,11 +161,11 @@ function swipeUp() {
     }
 
     if (swipeUpMethodOne()) {
-        log("方式一解锁成功");
+        log("方式一上滑成功");
     } else if (swipeUpMethodTwo()) {
-        log("方式二解锁成功");
+        log("方式二上滑成功");
     } else {
-        setLog("暂时无法解锁");
+        setLog("当前程序无法上滑至桌面或密码输入界面");
         exitShell();
     }
 }
@@ -211,6 +219,11 @@ function swipeUpMethodTwo() {
  * 判断上滑结果
  */
 function swipeUpSuc() {
+    let km = context.getSystemService(Context.KEYGUARD_SERVICE);
+    // 判断是否在锁屏界面
+    if (!km.inKeyguardRestrictedInputMode()) {
+        return true;
+    }
     for (let i = 0; i < 10; i++) {
         if (!text(i).clickable(true).exists() && !desc(i).clickable(true).exists()) {
             return false;
@@ -590,7 +603,7 @@ function checkMyPermission() {
         }
     } else if ("rule_3" == jumpRules) {
         let week = new Date().getDay();
-
+        let holidayArray = myCfg.get(holidayCfgName);
         if (holidayArray.indexOf(getDateTime(false)) != -1 || week == 6 || week == 0) {
             setLog("今天是节假日, 不会打卡哦~");
             exitShell();
