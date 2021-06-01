@@ -1,0 +1,74 @@
+[
+  {
+    "label": "[非必填] 公司名",
+    "name": "companyName",
+    "placeholder": "如果你的钉钉加入了多个公司，请填写你打卡的公司名"
+  },
+  {
+    "label": "[非必选] 打卡规则，跳过节假日/周末",
+    "name": "jumpRules",
+    "type": "select",
+    "options": {
+      "rule_0": "请选择",
+      "rule_1": "跳过法定节假日",
+      "rule_2": "跳过周末",
+      "rule_3": "跳过法定节假日及周末"
+    }
+  },
+  {
+    "label": "上班打卡时间范围",
+    "name": "morTime",
+    "placeholder": "07:00-09:00",
+    "validation": "required"
+  },
+  {
+    "label": "下班打卡时间范围",
+    "name": "nightTime",
+    "placeholder": "17:30-24:00",
+    "validation": "required"
+  },
+  {
+    "label": "打卡随机时间（秒）",
+    "name": "maxTime",
+    "placeholder": "最小时间固定为10s，此处输入最大时间（秒）",
+    "validation": "required|number|min:10"
+  },
+  {
+    "label": "[非必填] 手机解锁密码，仅支持数字密码解锁（不填则表示上滑即解锁）",
+    "name": "pwd",
+    "placeholder": "例：123456",
+    "validation": "number"
+  },
+  {
+    "label": "[非必填] 钉钉登录账号",
+    "name": "account"
+  },
+  {
+    "label": "[非必填] 钉钉登录密码",
+    "name": "accountPwd"
+  },
+  {
+    "label": "停顿时间：若进入打卡页面失败，请调大该数字（秒）",
+    "name": "waitTime",
+    "validation": "required|number"
+  },
+  {
+    "label": "[非必填] 百度OCR Token的get方式 Url",
+    "name": "tokenUrl",
+    "placeholder": "若填写，则通过OCR识别打卡结果中是否包含打卡成功字样"
+  },
+  {
+    "label": "[非必填]server酱的SCKEY，注意区分旧版和Turbo版",
+    "name": "serverUrl"
+  },
+  {
+    "label": "server酱通知方式",
+    "name": "sendImgRules",
+    "type": "select",
+    "options": {
+      "notSend": "默认不通知",
+      "sc": "旧版Server酱",
+      "sctapi": "Turbo版Server酱"
+    }
+  }
+]
