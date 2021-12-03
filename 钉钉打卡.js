@@ -358,13 +358,17 @@ function getReslt() {
     try {
         if (textContains("打卡成功").exists() || descContains("打卡成功").exists()) {
             setLog("普通识别结果：" + myStr + "成功!");
-        } else {
+        } else if (textContains("已打卡").exists() || descContains("已打卡").exists()) {
+            setLog("普通识别结果：" + myStr + "，重复打卡，请查看图片结果！");
+        }else {
             setLog("普通识别结果：" + myStr + "失败!，扣你丫工资~");
         }
         if (tokenUrl) {
             let str = getContentByOcr();
             if (str.indexOf("打卡成功") !== -1) {
                 setLog("OCR识别结果：" + myStr + "成功!");
+            } else if (str.indexOf("已打卡") !== -1) {
+                setLog("OCR识别结果：" + myStr + "，重复打卡，请查看图片结果！");
             } else {
                 setLog("OCR识别结果：" + myStr + "失败!，扣你丫工资~");
             }
