@@ -1,7 +1,7 @@
 importClass(android.provider.Settings);
 importClass(android.content.Context);
 /* --------------------------------------预配置开始----------------------------------- */
-const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, sendImgRules, account, accountPwd, jumpRules } = hamibot.env;
+const { serverUrl, companyName, morTime, nightTime, tokenUrl, maxTime, waitTime, pwd, sendImgRules, account, accountPwd, jumpRules, leaveEarly, punchLater} = hamibot.env;
 var myLog = "";
 var myStr = "";
 const w = device.width;
@@ -73,6 +73,7 @@ function startProgram() {
     sleep(randTime * 1000);
     punchTheClock();
     // 4.获取结果
+    checkPunch();
     getReslt();
     // 5.返回给用户
     exitShell();
@@ -348,6 +349,48 @@ function uploadImg() {
 }
 
 /**
+ * 1.切换不常用公司会出现是否继续打卡提示，默认继续打卡
+ * 2.判断是否早退打卡，迟到打卡
+ * */
+function checkPunch() {
+    toastLog("等待10s，确保操作完毕");
+    sleep(10000);
+    toastLog("检查打卡");
+    if (text("继续打卡").clickable(true).exists()) {
+        text("继续打卡").clickable(true).findOne().click();
+    } else if (desc("继续打卡").clickable(true).exists()) {
+        desc("继续打卡").clickable(true).findOne().click();
+    }
+    try {
+            if (leaveEarly) {
+                if (textContains("早退打卡").exists() || descContains("早退打卡").exists()) {
+                    setLog("早退打卡,执行早退打卡");
+                    if (text("早退打卡").clickable(true).exists()) {
+                        text("早退打卡").clickable(true).findOne().click();
+                    }else if (desc("早退打卡").clickable(true).exists()) {
+                        desc("早退打卡").clickable(true).findOne().click();
+                    }
+                }
+            }
+            if (punchLater) {
+                if (textContains("迟到打卡").exists() || descContains("迟到打卡").exists()) {
+                    setLog("迟到打卡，执行迟到打卡");
+                    if (text("迟到打卡").clickable(true).exists()) {
+                        text("迟到打卡").clickable(true).findOne().click();
+                    } else if (desc("迟到打卡").clickable(true).exists()) {
+                        desc("迟到打卡").clickable(true).findOne().click();
+                    }
+                }
+            } 
+        
+    } catch (error) {
+        setLog("检查打卡出错：" + '\n\n' + error.message);
+        
+    }
+
+}
+
+/**
  * 获取打卡结果
  */
 function getReslt() {
@@ -356,26 +399,28 @@ function getReslt() {
     toastLog("识别打卡结果");
 
     try {
-        if (textContains("打卡成功").exists() || descContains("打卡成功").exists()) {
-            setLog("普通识别结果：" + myStr + "成功!");
-        } else if (textContains("已打卡").exists() || descContains("已打卡").exists()) {
-            setLog("普通识别结果：" + myStr + "，重复打卡，请查看图片结果！");
-        }else {
-            setLog("普通识别结果：" + myStr + "失败!，扣你丫工资~");
-        }
-        if (tokenUrl) {
-            let str = getContentByOcr();
-            if (str.indexOf("打卡成功") !== -1) {
-                setLog("OCR识别结果：" + myStr + "成功!");
-            } else if (str.indexOf("已打卡") !== -1) {
-                setLog("OCR识别结果：" + myStr + "，重复打卡，请查看图片结果！");
+            if (textContains("打卡成功").exists() || descContains("打卡成功").exists()) {
+                setLog("普通识别结果：" + myStr + "成功!");
+            } else if (textContains("已打卡").exists() || descContains("已打卡").exists()) {
+                setLog("普通识别结果：" + myStr + "，重复打卡，请查看图片结果！");
             } else {
-                setLog("OCR识别结果：" + myStr + "失败!，扣你丫工资~");
+                setLog("普通识别结果：" + myStr + "失败!，扣你丫工资~");
             }
-        }
-        if (sendImgRules != "notSend") {
-            uploadImg();
-        }
+            if (tokenUrl) {
+                let str = getContentByOcr();
+                setLog("OCR识别内容：" + str);
+                if (str.indexOf("打卡成功") !== -1) {
+                    setLog("OCR识别结果：" + myStr + "成功!");
+                } else if (str.indexOf("已打卡") !== -1) {
+                    setLog("OCR识别结果：" + myStr + "，重复打卡，请查看图片结果！");
+                } else {
+                    setLog("OCR识别结果：" + myStr + "失败!，扣你丫工资~");
+                }
+            }
+            if (sendImgRules != "notSend") {
+                uploadImg();
+            }
+        
     } catch (error) {
         setLog("识别打卡结果出错：" + '\n\n' + error.message);
     }
