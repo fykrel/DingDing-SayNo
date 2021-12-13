@@ -48,6 +48,16 @@
     "name": "accountPwd"
   },
   {
+    "label": "[非必填] 开启早退打卡功能，请谨慎开启！！",
+    "name": "leaveEarly",
+    "placeholder": "若填写，则会执行早退打卡！不填写则不会执行早退打卡"
+  },
+  {
+    "label": "[非必填] 开启迟到打卡功能，请谨慎开启！！",
+    "name": "punchLater",
+    "placeholder": "若填写，则会执行迟到打卡！不填写则不会执行迟到打卡"
+  },
+  {
     "label": "停顿时间：若进入打卡页面失败，请调大该数字（秒）",
     "name": "waitTime",
     "validation": "required|number"
