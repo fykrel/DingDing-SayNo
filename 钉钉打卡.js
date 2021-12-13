@@ -268,18 +268,29 @@ function loginIfNeed() {
             setLog("当前未登录，请输入钉钉登录账号及密码");
             exitShell();
         }
-
-        if (id("et_phone_input").exists() && id("et_pwd_login").exists()) {
-            id("et_phone_input").findOne().setText(account);
-            sleep(1000);
-            id("et_pwd_login").findOne().setText(accountPwd);
-            log("使用ID选择输入");
-        } else {
+       // if (id("et_phone_input").exists() && id("et_pwd_login").exists()) {
+            //不知道为什么ID无法进行下一步
+       //     id("et_phone_input").findOne().setText(account);
+       //     sleep(1000);
+       //     id("et_pwd_login").findOne().setText(accountPwd);
+       //     log("使用ID选择输入");
+       // } else {
             setText(0, account);
             sleep(1000);
             setText(1, accountPwd);
             log("使用setText输入");
+        //}
+        sleep(1000);
+        //获取协议选择框坐标
+        if (text("忘记密码").clickable(true).exists()) {
+            var checkBtnW = text("忘记密码").clickable(true).findOne().bounds().left + 15;
+            var checkBtnY = textContains("我已阅读并同意").findOne().bounds().top + 15;
+        } else {
+            var checkBtnY = descContains("我已阅读并同意").findOne().bounds().top + 15;
+            var checkBtnW = desc("忘记密码").clickable(true).findOne().bounds().left + 15;
         }
+        click(checkBtnW, checkBtnY);
+        sleep(2000);
         // Android版本低于7.0
         if (device.sdkInt < 24) {
             let pageUIObj = [];
